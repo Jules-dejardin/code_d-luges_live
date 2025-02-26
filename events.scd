@@ -46,67 +46,8 @@
 	e.add(\event2 -> {
 		//init
 		~mom.free;
-		~mom = Synth(\audioBuf, [\buf, ~buffers[\mom][0], \loop, 0,\out,0, \amp, -1],~mainGrp);
+		~mom = Synth(\audioBufste, [\buf, ~buffers[\mom][0], \loop, 0,\out,0, \amp, -1],~mainGrp);
 });
-
-	e.add(\event9
-		-> {
-			~boucheGran.stop;
-			~mer.stop;
-			~granOizo.stop;
-			~chord.stop;
-			~snow.set(\relOut, 1, \gate,0);
-			//~g.do({ arg n; n.set(\gate, 0) });
-
-			~jumpSample = (0..5);
-
-			~granOizo = Pbind(
-				\instrument, \gran,
-				\buf, ~buffers[\oizo][~jumpSample.choose],
-				\sync, Pseq([0,0,0,0,
-					1,1,0,0,
-					0,0,1,1,
-					0,0,1,0,1,0,1,0],inf),
-				\gDur, Pwhite(0.05, 0.8, inf),
-				\dens, Pwhite(5,40, inf),
-				\pos, Pwhite(0.2,0.6,inf),
-				\c0, Pwhite(-8,2,inf),
-				\c1, Pwhite(-4,2,inf),
-				\atk, Pwhite(0.001,0.5,inf),
-				\rel, Pwhite(0.1, 0.5,inf),
-				\sus, Pwhite(0.1,2,inf),
-				\rate, Pwhite(0.8, 1.5,inf),
-				\dur, Pwhite(0.001,0.6,inf),
-				\amp, 1,
-				\group, ~mainGrp,
-				\out,~bus[\masterNappes],
-			).play;
-	});
-
-
-	e.add(\event10 -> {
-		~granOizo.stop;
-		~mer.stop;
-		~chord.stop;
-		~snow.set(\relOut, 1, \gate,0);
-		//~g.do({ arg n; n.set(\gate, 0) });
-
-		~boucheGran = Pbind(
-			\instrument, \gran,
-			\buf,~buffers[\humain][2],
-			\sync, 0,
-			\panRand, 1,
-			\gDur, Pwhite(0.25, 0.7, inf),
-			\dens, Pwhite(10,30, inf).round(1),
-			\pos, exprand(0.1,1),
-			\c0, (-2),
-			\rel, 0.2,
-			\sus, 1,
-			\amp, 1,
-			\group, ~mainGrp,
-			\out,~bus[\masterNappes],
-		).play;
-	});
 
 	e.add(\event3 -> {
 		~granOizo.stop;
@@ -133,7 +74,7 @@
 			\ldb, 6,
 			\amp, Pfunc({~volumeSynth}, inf),
 			\group, ~mainGrp,
-			\out,~bus[\masterNappes],
+			\out,~bus[\masterNappes_bspat],
 		).play;
 	});
 
@@ -145,7 +86,7 @@
 			~g =  5.collect({
 				arg n;
 				Synth(\granRadio, [
-					\amp, -8,
+					\amp, -6,
 					\buf, ~recBuff,
 					\out, ~bus[\gran_radio],
 					\out2,~bus[\satura],
@@ -158,7 +99,8 @@
 					\durRand, 1,
 					\rate, 1,
 					\rateRand, 2.midiratio,
-					\grainEnv, ~env_grad,
+					// \bufIndex, ~bufenv[0].bufnum,
+					\grainEnv, ~bufenv[0],
 					\ptrBus, ~bus[\ptrBus],
 					\ptrSampleDelay, n.linlin(0,4,20000,s.sampleRate*2),
 					\ptrRandSamples, 10000,
@@ -213,6 +155,64 @@
 	});
 	// ~masterNappes.set(\pos, 0);
 	// ~masterNappes.set(\width, 6);
+
+	e.add(\event9 -> {
+		~boucheGran.stop;
+		~mer.stop;
+		~granOizo.stop;
+		~chord.stop;
+		~snow.set(\relOut, 1, \gate,0);
+			//~g.do({ arg n; n.set(\gate, 0) });
+
+			~jumpSample = (0..5);
+
+			~granOizo = Pbind(
+				\instrument, \gran,
+				\buf, ~buffers[\oizo][~jumpSample.choose],
+				\sync, Pseq([0,0,0,0,
+					1,1,0,0,
+					0,0,1,1,
+					0,0,1,0,1,0,1,0],inf),
+				\gDur, Pwhite(0.05, 0.8, inf),
+				\dens, Pwhite(5,40, inf),
+				\pos, Pwhite(0.2,0.6,inf),
+				\c0, Pwhite(-8,2,inf),
+				\c1, Pwhite(-4,2,inf),
+				\atk, Pwhite(0.001,0.5,inf),
+				\rel, Pwhite(0.1, 0.5,inf),
+				\sus, Pwhite(0.1,2,inf),
+				\rate, Pwhite(0.8, 1.5,inf),
+				\dur, Pwhite(0.001,0.6,inf),
+				\amp, 1,
+				\group, ~mainGrp,
+				\out,~bus[\masterNappes],
+			).play;
+	});
+
+	e.add(\event10 -> {
+		~granOizo.stop;
+		~mer.stop;
+		~chord.stop;
+		~snow.set(\relOut, 1, \gate,0);
+		//~g.do({ arg n; n.set(\gate, 0) });
+
+		~boucheGran = Pbind(
+			\instrument, \gran,
+			\buf,~buffers[\humain][2],
+			\sync, 0,
+			\panRand, 1,
+			\gDur, Pwhite(0.25, 0.7, inf),
+			\dens, Pwhite(10,30, inf).round(1),
+			\pos, exprand(0.1,1),
+			\c0, (-2),
+			\rel, 0.2,
+			\sus, 1,
+			\amp, 1,
+			\group, ~mainGrp,
+			\out,~bus[\masterNappes],
+		).play;
+	});
+
 
 	e.add(\event11 -> {(
 		~medium.stop;
@@ -297,23 +297,20 @@
 	e.add(\event15 -> {(
 		~boucle.stop;
 		~cloches = Routine{
-			var sustain = 4, transition = 1, overlap = 2;
+			var sustain = 3, transition = 1, overlap = 4;
 			var period = transition * 2 + sustain / overlap;
 			0.5.wait;            // wait for the synthdef to be sent to the server
 			inf.do{
-				~masterNappes.set(\width, [2,3,4].choose);
-				// ~masterNappes.set(\pos, [-0.2, 0.2, 0.8, 1.2].choose.asStream);
-				~masterNappes.set(\pos, ((0..20)/10).choose.asStream);
 				~clo = Synth(\cloches, [
 					\atk, transition,
 					\sus, sustain,
 					\rel, transition,
 					\pan, 1.0.rand2,
-					\amp, -3,
+					\amp, ~cloche_vol,
 					\switch, ~interp_cloche,
 					\freqs, {200.0.rrand(5000)}.dup(12),
 					\rings, {0.1.rrand(2)}.dup(12),
-					\out, ~bus[\masterNappes],
+					\out, (0..3).choose,
 					\out2, ~bus[\satura]
 				], ~mainGrp);
 				period.wait;
@@ -335,26 +332,37 @@
 		~mainGrp);
 	)});
 
+e.add(\event20 -> {(
+		~drame_slow.free;
+			~slowenv = Env([0, 1, 0], [0.01, 0.01], [8, -4]);
+			x = Buffer.sendCollection(s, ~slowenv.discretize, 1);
+		// ~drame_gran.set(\pan, [1.5,2]);
+			~drame_slow_route.stop;
+		// PanAz
+			~drame_slow_route = Routine{
+			inf.do{
+				~rel = (20..15).choose;
+				~atk = 2;
+				~drame_slow = Synth.new(\granul_2, [\buf, ~buffers[\drame][(1..4).choose], \amp, -3, \drive, 1.02, \out, 2, \rel, ~rel,\atk, ~atk,\grainEnv, x], ~mainGrp);
+				0.001.wait;
+				10.do{
+					~drame_slow.set(\masse,40);
+					~drame_slow.set(\dur, rrand(0.4,0.8));
+					~drame_slow.set(\rateSaw, rrand(0.045,0.055));
+					~drame_slow.set(\rate, 0.83);
+					((~atk+~rel)/10).wait;
+				};
+				};
+			}.play;
+	)});
+
 	e.add(\event21 -> {(
 		~drame_gran.free;
-		~drame_gran = Synth.new(\granul, [\buf, ~buffers[\drame][0], \out, -3], ~mainGrp);
-			~winenv = Env([0, 1, 0], [0.1, 0.01], [8, -4]);
+		~drame_gran = Synth.new(\granul, [\buf, ~buffers[\drame][0], \amp, -5, \drive,1.2, \out, 0, \masse, 60, \pan, 0, \rate, 0.80, \rateSaw, 0.0075, \dur, 1.2, \gate,1, \rel,50], ~mainGrp);
+			~winenv = Env([0, 1, 0], [0.5, 0.01], [8, -4]);
 			z = Buffer.sendCollection(s, ~winenv.discretize, 1);
 			~drame_gran.set(\grainEnv, z);
 		// ~drame_gran.set(\pan, [1.5,2]);
-			~drame_gran_route.stop;
-		// PanAz
-			~drame_gran_route = Routine{
-			inf.do{
-				~drame_gran.set(\masse,30);
-		// ~z.set(\pos,rrand(0.01,1.000));
-				~drame_gran.set(\dur, rrand(0.2,1.5));
-				~drame_gran.set(\rate, rrand(0.82,0.8));
-				~drame_gran.set(\rateSaw, rrand(0.01,0.001));
-				~drame_gran.set(\pan, rrand(0.01,1.99));
-					rrand(0.2,2).wait;
-				};
-			}.play;
 	)});
 
 	e.add(\event22 -> {(
@@ -364,6 +372,9 @@
 
 		~gong.stop;
 		~gonghigh.stop;
+		~drame_rout.stop;
+
+		~drame_gran.set(\gateout,1);
 
 		~gonghigh = Routine{
 			var period5 = Array.fill(20, {rrand(7.0,15.0)}).choose.asStream;
@@ -385,9 +396,13 @@
 					renfoAtk:0,
 					curve:-8,
 					hpfHigh:500,
-					out: ~bus[\masterNappes],
+					out: ~bus[\masterNappes_bspat],
 				],~mainGrp);
 
+				~drame_gran.set(\dur, rrand(0.5,1.5));
+				~drame_gran.set(\rate, rrand(0.82,0.85));
+				~drame_gran.set(\rateSaw, rrand(0.003,0.01));
+				~drame_gran.set(\pan, rrand(0.0,2.0));
 				period5.wait;
 			}
 		};
@@ -397,30 +412,53 @@
 			var period = [10,10.5,11,11.5,12,12.5,13].choose.asStream;
 			0.5.wait;
 			inf.do{
-				var lowfact = Array.fill(20, {rrand(0.05, 2.5)}).choose.asStream;
+				var lowfact = Array.fill(20, {rrand(2.0, 3.5)}).choose.asStream;
 				var pan = Array.fill(20, {rrand(0.5,5.0)}).choose;
 				Synth(\gong, [
 					freq: ~fg,
 					dur: period,
-					atk:0.01,
-					amp: 0.30,
+					atk:0.005,
+					amp: 0.28,
 					decay: period,
 					harmofact: 0.02,
 					harmolowfact:lowfact,
 					panRate: pan,
 					verbTime:period/2,
 					ampdb:4,
-					renfoAtk: 0.3,
-					out: ~bus[\masterNappes],
+					renfoAtk: 0.25,
+					out: ~bus[\masterNappes_bspat],
 				], ~mainGrp);
+
+				~drame_gran.set(\modGong, 1);
+
 				period.wait;
+
 			}
 		};
 		~gong.play;
+		// 3.wait;
+
+		~drame_rout = Routine{
+			var period3 = Array.fill(20, {rrand(7.0,15.0)}).choose.asStream;
+
+		~winenv = Env([0, 1, 0], [0.5, 0.01], [8, -4]);
+		z = Buffer.sendCollection(s, ~winenv.discretize, 1);
+
+			inf.do{
+				~drame_gran = Synth.new(\granul, [\buf, ~buffers[\drame][0], \amp, -3, \drive,1.9, \out, 0, \masse, 25, \pan, 0, \rate, 0.82, \rateSaw, 0.005, \dur, 0.7, \pos, rrand(0.1,0.8), \atk,0.1, \rel, rrand(15,30), \gate,1, \grainEnv,(-1)], ~mainGrp);
+				~drame_gran.set(\grainEnv, z);
+				~drame_gran.set(\dur, rrand(0.5,1.5));
+				~drame_gran.set(\rate, rrand(0.82,0.85));
+				~drame_gran.set(\rateSaw, rrand(0.003,0.01));
+				~drame_gran.set(\pan, rrand(0.0,2.0));
+
+			period3.wait;
+			}
+		}.play;
 	)});
 	// page 4 event
 	e.add(\event26 -> {(
-
+		~radio_expend_zero.set(\amp2,-60,\amp3, -60,\amp4, -60);
 	)});
 
 	e.add(\event27 -> {(
@@ -512,6 +550,11 @@
 				((30..40)/10).choose.wait;
 			};
 		}.play;
+	)});
+
+	e.add(\event23 -> {(
+		~noise_wave_1 = Synth(\noise_waves, [\amp, 3, \rel, 6, \atk, 7, \width, 1.8, \out, ~bus[\masterNappes_bspat]]);
+		~noise_wave_2 = Synth(\noise_waves, [\amp, 3, \rel, 6, \atk, 7,\width, 1.8, \start, 0.25,\mid, 0.5, \end, 0.75, \out, ~bus[\masterNappes_bspat]]);
 	)});
 
 	//page 1 boutons
@@ -652,14 +695,40 @@
 		(
 			// ~master.set(\out, [-0.2,0.2,0.8,1.2].choose);
 			// ~master.set(\width, ((15..25)/10).choose);
+			Routine{
 			Synth(\lectechant, [
 				\buf, ~buffers[\cratch][[0,1,2,3,4,5,6,7].choose],
 				\loop, 0,
+				\rate, -1,
+				\pos, 0.999,
 				\out, ~bus[\satura],
 				\out2, ~bus[\satura_2],
 				\bus, ~witchChannel,
 				\amp, 3
 			], ~mainGrp);
+				rrand(0.1,0.3).wait;
+				Synth(\lectechant, [
+					\buf, ~buffers[\cratch][[0,1,2,3,4,5,6,7].choose],
+					\loop, 0,
+					\rate, -1,
+					\pos, 0.999,
+					\out, ~bus[\satura],
+					\out2, ~bus[\satura_2],
+					\bus, ~witchChannel,
+					\amp, 3
+				], ~mainGrp);
+				rrand(0.1,0.5).wait;
+				Synth(\lectechant, [
+					\buf, ~buffers[\cratch][[0,1,2,3,4,5,6,7].choose],
+					\loop, 0,
+					\rate, -1,
+					\pos, 0.999,
+					\out, ~bus[\satura],
+					\out2, ~bus[\satura_2],
+					\bus, ~witchChannel,
+					\amp, 3
+				], ~mainGrp);
+				}.play;
 		)
 	});
 
@@ -752,19 +821,6 @@
 	//boutons page 3
 	e.add(\sample17 -> {
 		(
-			Synth(\lectechant, [
-				\buf, ~buffers[\dog][(0..6).choose],
-				\loop, 0,
-				\out, ~bus[\satura],
-				\out2, ~bus[\satura_2],
-				\bus, ~witchChannel,
-				\amp, 3
-			], ~mainGrp);
-		)
-	});
-
-	e.add(\sample18 -> {
-		(
 			Synth(\audioBuf, [
 				\buf, ~buffers[\respi][[0,1].choose],
 				\loop, 0,
@@ -775,7 +831,8 @@
 			], ~mainGrp);
 		)
 	});
-	e.add(\sample19 -> {
+
+	e.add(\sample18 -> {
 		(
 			Synth(\audioBuf, [
 				\buf, ~buffers[\expi][[0,1,2,3,4,5,6,7].choose],
@@ -786,6 +843,20 @@
 				\amp, 0
 			], ~mainGrp);
 		)
+	});
+	e.add(\sample19 -> {
+		(
+
+			Synth(\audioBuf, [
+				\buf, ~buffers[\boi_bulked_mono][(0..11).choose],
+				\loop, 0,
+				\out, ~bus[\satura],
+				\out2, ~bus[\satura_2],
+				\bus, ~witchChannel,
+				\amp, 0
+			], ~mainGrp);
+		)
+
 	});
 
 	e.add(\sample20 -> {
@@ -798,6 +869,13 @@
 				\bus, ~witchChannel,
 				\amp, 0
 			], ~mainGrp);
+
+			~drame_gran.set(\dur, rrand(0.5,1.5));
+				~drame_gran.set(\rate, rrand(0.82,0.85));
+				~drame_gran.set(\rateSaw, rrand(0.003,0.01));
+				~drame_gran.set(\pan, rrand(0.0,2.0));
+
+			~drame_gran.set(\gateout, 0.3.coin);
 		)
 	});
 
@@ -830,8 +908,10 @@
 	e.add(\sample23 -> {
 		(
 		Synth(\audioBuf, [
-				\buf, ~buffers[\gameboy][0],
+				\buf, ~buffers[\boi_bulked_mono][(0..11).choose],
 				\loop, 0,
+				\pos, 0.999,
+				\rate, -1,
 				\out, ~bus[\satura],
 				\out2, ~bus[\satura_2],
 				\bus, ~witchChannel,
@@ -842,7 +922,7 @@
 
 	e.add(\sample24 -> {
 		(
-			Synth(\gong, [
+			/*Synth(\gong, [
 				freq:~fg*3.5,
 				dur: 2,
 				atk:0.2,
@@ -854,7 +934,18 @@
 				out: ~bus[\satura],
 				\out2, ~bus[\satura_2],
 				\bus, ~witchChannel
-		]);
+		]);*/
+
+			Synth(\lectechant, [
+				\buf, ~buffers[\sc_fx][[0,1,2,3,4].choose],
+				\loop, 0,
+				\pos, 0.999,
+				\rate, -1,
+				\out, ~bus[\satura],
+				\out2, ~bus[\satura_2],
+				\bus, ~witchChannel,
+				\amp, 0
+			], ~mainGrp);
 	)});
 	//page 4 samples
 	e.add(\sample25 -> {(
@@ -972,8 +1063,11 @@
 		~bal.set(\gate,1);
 		~melo.free;
 		~spat_bull.stop;
-		~drame_gran.set(\gate,1);
+		~drame_slow.set(\gateout,1);
+		~drame_gran.set(\gateout,1);
 		~drame_gran_route.stop;
+		~drame_slow_route.stop;
+		~drame_rout.stop;
 	});
 
 	e.add(\mayday -> {
@@ -985,8 +1079,8 @@
 		arg val, num, chan;
 
 		// "ca spat ou quoi ?!".postln;
-		~masterSamples.set(\lag, [0.5,1,2,3,5].choose);
-		~masterSamples.set(\lag, [0.5,1,2,3,5].choose);
+		~masterSamples.set(\lag, [2,3,5].choose);
+		~masterSamples_2.set(\lag, [2,3,5].choose);
 
 		~masterSamples.set(\pos, ((0..20)/10).choose);
 		~masterSamples_2.set(\pos, ((0..20)/10).choose);
@@ -999,8 +1093,11 @@
 		~masterSamples.set(\width, 2);
 		~masterSamples_2.set(\width, 2);
 */
+		// [val, num, chan].postln;
 		~witchChannel.swap(0,1).first;
 		~witchChannel.postln;
+
+		if (chan == 1) {~radio_expend_zero.set(\amp1,-6, \amp2,-6)}{~radio_expend_zero.set(\amp1,0, \amp2,0)};
 
 		case
 		//nappes sûr
@@ -1030,10 +1127,10 @@
 		{num==43 && val==127 && chan==3}{e[\event21].value;"drame".postln;}
 		{num==44 && val==127 && chan==3}{e[\event22].value;"gong nappe".postln;}
 		// nappes tableau 4
-		{num==73 && val==127 && chan==4}{e[\event23].value;"vide".postln;}
+		{num==73 && val==127 && chan==4}{e[\event23].value;"blast".postln;}
 		{num==74 && val==127 && chan==4}{e[\event24].value;"vide".postln;}
 		{num==75 && val==127 && chan==4}{e[\event25].value;"vide".postln;}
-		{num==41 && val==127 && chan==4}{e[\event26].value;"vide".postln;}
+		{num==41 && val==127 && chan==4}{e[\event26].value;"radio trick".postln;}
 		{num==42 && val==127 && chan==4}{e[\event27].value;"radio notcher".postln;}
 		{num==43 && val==127 && chan==4}{e[\event28].value;"noise".postln;}
 		{num==44 && val==127 && chan==4}{e[\event29].value;"sub".postln;}
@@ -1094,7 +1191,7 @@
 
 	MIDIFunc.cc({
 		arg val, ccNum, channel;
-		[val, ccNum, channel].postln;
+		// [val, ccNum, channel].postln;
 
 		if(ccNum==107, {
 			~freeze = val.linexp(0, 127, 0, 1);
@@ -1146,6 +1243,7 @@
 			~vstDelaySynth.synth.set(\mix, ~mixDel);
 			"Mix Delay".postln;
 			~mixDel.postln;
+			~radio_expend_zero.set(\amp2,0,\amp3, 0,\amp4, 0);
 		});
 		//RQ high nappa
 		if(ccNum == 16 /*&& channel == 1*/, {
@@ -1283,14 +1381,17 @@
 		});
 		//variation granulateur
 		if(ccNum == 13 /*&& channel == 1*/,{
-			~dur = val.linlin(0,127,0.02,0.25).round(0.01).lag(2);
+			~dur = val.linexp(0,127,0.005,0.8).round(0.001).lag(1); //0.02,0.25
+			~index = val.linlin(0,127, 0,3).round(1);
+			~panRate = val.linlin(0,127,5,0.6).round(0.1).lag(1);
 			~rqGran = val.linexp(0,127,0.15,0.999).round(0.01).lag(1);
-			~g.do({ arg n; n.set(\baseDur, ~dur, \rq, ~rqGran) });
-			~dur_atk = val.linlin(0,127,0.001,0.7);
-			"durée granulateur".postln;
+			~g.do({ arg n; n.set(\baseDur, ~dur, \rq, ~rqGran, \grainEnv, ~bufenv[~index]) });
+			~dur_atk = val.linlin(0,127,0.001,0.3).round(0.001);
+			// "durée granulateur".postln;
 			~dur.postln;
-			"rq granulateur".postln;
-			~rqGran.postln;
+			// "rq granulateur".postln;
+			// ~rqGran.postln;
+			// ~index.postln;
 		});
 		// variation granulateur
 		if(ccNum == 14 /*&& channel == 1*/,{
@@ -1307,13 +1408,17 @@
 			~volSamples = val.linlin(0,127,-60,6).round(0.01);
 			~masterGranRadio.set(\amp, ~volSamples);
 			~saturator.set(\amp, ~volSamples);
+			~saturator_2.set(\amp, ~volSamples);
 			"Master samples".postln;
 			~volSamples.postln;
 		});
 		//master nappes
 		if (ccNum == 35, {
 			~volNappes = val.linlin(0,127,-60,6).round(0.01);
-			~masterNappes.set(\amp, ~volNappes);
+			~masterNappes_bspat.set(\amp, ~volNappes);
+			~drame_slow.set(\amp, ~volNappes);
+			~clo.set(\amp, ~volNappes);
+			~cloche_vol = ~volNappes;
 			~drame_gran.set(\amp,~volNappes);
 			"Master nappes".postln;
 			~volNappes.postln;

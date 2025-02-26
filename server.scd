@@ -18,6 +18,7 @@ s.options.numOutputBusChannels_(12);
 s.options.sampleRate_(48000);
 s.options.memSize_(2.pow(20)); // ~1 GB of active memory
 // s.newBusAllocators;
+// 2.pow(20)
 (
 ~connect_midi_devices = { arg device, name;
     // init or refresh MIDIClient end points

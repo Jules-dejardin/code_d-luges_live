@@ -1,4 +1,24 @@
 //Générateurs de sons
+SynthDef(\noise_waves, {
+	arg amp=(-5), out=0, atk=0.6, rel=4, start=1.75, end=1.5,mid=1.25,  width=2;
+	var sig, env, lfo, lay1, lay2, lay3;
+
+	env = EnvGen.kr(Env([0,1,0], [atk,rel],[4,-4]),doneAction:2);
+	sig = PinkNoise.ar(0.6);
+
+	lay1 = RHPF.ar(sig, env.linlin(0,1,220,2200), env.linlin(0,1,0.08,0.4), 0.3);
+	lay2 = RHPF.ar(sig, env.linlin(0,1,440,4400), env.linlin(0,1,0.08,0.3), 0.3);
+	lay3 = RHPF.ar(sig, env.linlin(0,1,330,3300), env.linlin(0,1,0.09,0.3), 0.3);
+
+	sig =  RLPF.ar(sig, env.linlin(0,1,20,500), env.linlin(0,1,0.08,0.3), 0.4);
+
+	sig = lay1 + lay2 + lay3 + sig + BrownNoise.ar(LFNoise2.ar(0.5).linlin(-1,1,0.2,0.4));
+	// sig = PanAz.ar(4, sig, EnvGen.kr(Env([start,mid,end], [atk,rel],[4,-4]),doneAction:2), 1, width);
+	sig = PanAz.ar(4,sig, EnvGen.kr(Env([start,mid,end], [atk,rel],[4,-4]),doneAction:2));
+	sig = sig * amp.dbamp * env;
+	Out.ar(out, sig);
+}).add;
+
 SynthDef(\balayage, {
 	arg out=0, pan=0, in=0, amp=(-5), freq=220, rq=0.1, rqF=0.2, sat=1, notch=0.7, gate=0,relOut=5;
 	var sig, env, envout;
@@ -56,7 +76,7 @@ Out.ar(out, sig);
 
 
 SynthDef(\ou, {
-	arg out=0, pan=0, f1=300, f2=750,f3=2300,fd=90, pon=0,fon=0, atk=0.01,rel=0.5,amp=(-5), don=0;
+	arg out=0, pan=0, f1=300, f2=750,f3=2300,fd=90, pon=0,fon=0, atk=0.01,rel=0.5,amp=(-5), don=0, bus, out2;
 	var sig, env, sig2;
 
 	env = EnvGen.kr(Env.new([0, 1,0],[atk,rel],[4,-2]),doneAction:2);
@@ -67,20 +87,45 @@ SynthDef(\ou, {
 	sig = LPF.ar(sig, 4000);
 	sig = sig*env*amp.dbamp;
 	// sig = Pan2.ar(sig,SelectX.kr(pon,[0,SinOsc.kr(pan,0.5)]));
-	Out.ar(out,sig);
+	Out.ar(out, sig * (bus-1));
+	Out.ar(out2, sig * bus);
 }).add;
 
 
 SynthDef(\audioBuf, {
-	arg buf, out, amp=(-1), pos=0, t_trig=1, rate=1, loop=0, rev=0, pan=0, curve=0, atk=0.001;
+	arg buf, out, out2, amp=(-1), pos=0, t_trig=1, rate=1, loop=0, rev=0, pan=0, curve=0, atk=0.001, bus;
     var sig, env;
 
 	env = EnvGen.kr(Env.new([0,1,1],[atk,1],curve));
     sig = PlayBuf.ar(1, buf, BufRateScale.kr(buf) * rate, t_trig, BufFrames.kr(buf) * pos, loop: loop, doneAction:2);
 	sig = sig * env * amp.dbamp.lag(2);
 	//sig = Pan2.ar(sig, pan);
-	Out.ar(out, sig);
+	Out.ar(out, sig * (bus-1));
+	Out.ar(out2, sig * bus);
 }).add;
+
+SynthDef(\lectechant, {
+	arg buf, out,out2, amp=(-1), pos=0, t_trig=1, rate=1, loop=0, rev=0, pan=0, curve=0, atk=0.001, varEnv=1, rel=1, bpf=15000,minRate=0.6, maxRate=1.2, bus=0;
+    var sig, env, lfoAtk, lfoRel,lfoRate;
+
+	lfoAtk = SinOsc.ar(1).round(0.01).range(0.001,0.2);
+	lfoRel = SinOsc.ar(0.5).round(0.01).range(0.5,1);
+	lfoRate = LFNoise1.ar(0.5).round(0.01).range(minRate,maxRate);
+
+	if(varEnv == 0, {
+		env = EnvGen.kr(Env.new([0,1,1],[atk,rel],curve));
+	},{
+	env = EnvGen.kr(Env.new([0,1,1],[lfoAtk,lfoRel],curve));
+	});
+
+	sig = PlayBuf.ar(1, buf, BufRateScale.kr(buf) * lfoRate * rate, t_trig, BufFrames.kr(buf) * pos, loop: loop, doneAction:2);
+	sig = sig * env * amp.dbamp.lag(1);
+	// sig = BPF.ar(sig, bpf);
+	//sig = Pan2.ar(sig, pan);
+	Out.ar(out, sig * (bus-1));
+	Out.ar(out2, sig * bus);
+}).add;
+
 
 SynthDef(\audioBufste, {
 	arg buf, out, amp=(-1), pos=0, t_trig=1, rate=1, loop=0, rev=0, pan=0, curve=0, atk=0.001;
@@ -116,24 +161,29 @@ SynthDef(\master, {
 }).add;
 
 SynthDef(\master_spat, {
-	arg in, out=0, amp=0;
+	arg in, out=0, amp=0, duck=0, tresh=0.5, clamp=0.015, relax=0.015;
 	var sig;
 
 	sig = In.ar(in,4);
 	sig = sig * amp.dbamp.lag(1);
+	sig = Limiter.ar(sig, 0.998);
+	// sig = Compander.ar(sig, duck, tresh, 1, 1/28, clamp, relax);
 
 	Out.ar(out, sig);
 }).add;
 
 SynthDef(\radio_expend, {
-	arg in, out=0,out2=2, amp=0;
-	var sig;
+	arg in, out=0,out2=2, amp1=0, amp2=0, amp3=0, amp4=0;
+	var sig, sig1, sig2, sig3, sig4;
 
 	sig = In.ar(in,2);
-	sig = sig * amp.dbamp.lag(1);
+	sig1 = sig[0] * amp1.dbamp.lag(10);
+	sig2 = sig[1] * amp2.dbamp.lag(10);
+	sig3 = sig[0] * amp3.dbamp.lag(10);
+	sig4 = sig[1] * amp4.dbamp.lag(10);
 
-	Out.ar(out, sig);
-	Out.ar(out2,sig);
+	Out.ar(out, [sig1, sig2]);
+	Out.ar(out2,[sig3, sig4]);
 }).add;
 
 SynthDef(\AudioInputMono, {
@@ -154,28 +204,6 @@ SynthDef(\steIn, {
 	// sig = Pan2.ar(sig, pan);
 	Out.ar(out, sig);
 	Out.ar(out2,sig);
-}).add;
-
-SynthDef(\lectechant, {
-	arg buf, out,out2, amp=(-1), pos=0, t_trig=1, rate=1, loop=0, rev=0, pan=0, curve=0, atk=0.001, varEnv=1, rel=1, bpf=15000,minRate=0.6, maxRate=1.2, bus=0;
-    var sig, env, lfoAtk, lfoRel,lfoRate;
-
-	lfoAtk = SinOsc.ar(1).round(0.01).range(0.001,0.2);
-	lfoRel = SinOsc.ar(0.5).round(0.01).range(0.5,1);
-	lfoRate = LFNoise1.ar(0.5).round(0.01).range(minRate,maxRate);
-
-	if(varEnv == 0, {
-		env = EnvGen.kr(Env.new([0,1,1],[atk,rel],curve));
-	},{
-	env = EnvGen.kr(Env.new([0,1,1],[lfoAtk,lfoRel],curve));
-	});
-
-	sig = PlayBuf.ar(1, buf, BufRateScale.kr(buf) * lfoRate, t_trig, BufFrames.kr(buf) * pos, loop: loop, doneAction:2);
-	sig = sig * env * amp.dbamp.lag(1);
-	// sig = BPF.ar(sig, bpf);
-	//sig = Pan2.ar(sig, pan);
-	Out.ar(out, sig * (bus-1));
-	Out.ar(out2, sig * bus);
 }).add;
 
 SynthDef(\ptr, {
@@ -199,7 +227,7 @@ SynthDef(\gong, {
 	arg freq = 200, dur = 4, amp = 0.5, decay = 1, out, harmofact=0.05, panRate=0.8,  harmolowfact=0.15, verbTime=1.5, atk=0.001, wetDelay=(-1), delayTime=0.1, renfoAtk=0.3, ampdb=(-3), hpfHigh=0, brfHigh=1700;
     var atkHarmo, noise, envelopedSound, sig, harmo, harmo2, delay, frappe, envdel, envHPF;
 
-	atkHarmo = EnvGen.kr(Env.new([0,0.8,0.8,0],[0.3,1,dur],2));
+	atkHarmo = EnvGen.kr(Env.new([0,0.8,0.8,0],[0.35,1,dur],2));
 
 	harmo = Formant.ar(freq/4, freq/1.5, freq/2) * harmolowfact * atkHarmo;
 	harmo2 = Formant.ar(freq/2, freq*4, freq) * harmofact * atkHarmo;
@@ -207,12 +235,12 @@ SynthDef(\gong, {
 	harmo = FreeVerb.ar(harmo, 0.7, 0.9, 0.7) * EnvGen.kr(Env.new([0,1,1,0],[0.2,1,dur*1.5],(-8)),doneAction: 2);
 	//harmo = Pan2.ar(harmo, SinOsc.ar(panRate,mul:0.3));
 
-	frappe = DelayL.ar((SinOsc.ar(freq, mul: amp-0.1) + SinOsc.ar(freq*0.1, renfoAtk)) * EnvGen.kr(Env.perc(0.001, 1), 0.01));
+	frappe = DelayL.ar(SineShaper.ar((SinOsc.ar(freq, 0.005, mul: amp-0.1) + SinOsc.ar(freq*0.1, renfoAtk)), 0.98) * EnvGen.kr(Env.perc(0.005, 1), 0.01));
 	envdel =  EnvGen.kr(Env.new([0,1,0], [0.2,decay], 4));
 
 	sig = DelayL.ar(SinOsc.ar(freq, mul: amp) * envdel,  0.2);
 	envelopedSound = sig * DelayL.ar(SinOsc.ar(9, mul:XLine.kr(0.2, 0, dur+1)), 0.02, 0.2);
-	sig = sig * EnvGen.kr(Env.new([0,1,0],[atk, dur*verbTime], [8,-8]));
+	sig = sig * EnvGen.kr(Env.new([0,1,0],[atk, dur+verbTime], [8,-8]));
 	sig = sig + envelopedSound;
 	sig = LPF.ar(sig, 100);
 //	sig = Pan2.ar(sig);
@@ -221,8 +249,9 @@ SynthDef(\gong, {
 	envHPF = EnvGen.kr(Env.new([freq+20,300], dur, (-3)));
 	sig = HPF.ar(sig, 1*envHPF);
 	sig = HPF.ar(sig,hpfHigh);
+	sig = sig*ampdb.dbamp.lag(1);
 
-    Out.ar(out, sig*ampdb.dbamp.lag(1));
+	Out.ar(out, [sig*LFNoise2.ar(0.1).linlin(-1,1,0.6,0.9), sig*LFNoise2.ar(0.2).linlin(-1,1,0.6,0.9), sig*LFNoise2.ar(0.3).linlin(-1,1,0.6,0.9), sig*LFNoise2.ar(0.4).linlin(-1,1,0.6,0.9)]);
 }).add;
 
 
@@ -264,7 +293,7 @@ SynthDef(\bpfsaw, {
 	sig = Balance2.ar(sig[0], sig[1], pan);
 	sig = sig * env * amp.dbamp;
 	sig = LPF.ar(sig, 10000);
-	Out.ar(out,sig);
+	Out.ar(out,[sig, sig]);
 }).add;
 
 SynthDef(\bass, {
@@ -282,13 +311,14 @@ SynthDef(\bass, {
 	// sig = Balance2.ar(sig[0], sig[1], pan);
 	sig = sig * env * amp.dbamp;
 	sig = LPF.ar(sig, 10000);
+	sig = Limiter.ar(sig);
 	Out.ar(out,sig);
 }).add;
 
 //nappes cloches
 SynthDef(\cloches, {
 arg out=0,out2=0, amp=0, freqs=#[0,0,0,0,0,0,0,0,0,0,0,0], rings=#[0,0,0,0,0,0,0,0,0,0,0,0], atk=5, sus=7, rel=6, switch=1;
-var sig,send, env, trig;
+var sig, send, env, trig, choose;
 
 	env = EnvGen.kr(Env.linen(atk, sus, rel, 1, 4), doneAction: Done.freeSelf);
 	trig = Decay.ar(Impulse.ar(Rand(0.3, 1)), 0.03, ClipNoise.ar(0.01));
@@ -298,9 +328,11 @@ var sig,send, env, trig;
 		trig                    // trigger de cloches
     );
 
-	send = sig * amp.dbamp * (1 - switch);
-	sig = sig * amp.dbamp * 1;
-	// sig = Pan2.ar(sig*env, pan);
+	send = sig * amp.dbamp.lag(2) * (1 - switch);
+
+	sig = sig * amp.dbamp.lag(2);
+
+	choose = TRand.kr(0,3, trig).round(1);
 
 	Out.ar(out, sig);
 	Out.ar(out2, send);
@@ -365,7 +397,7 @@ SynthDef(\gran,{
 //Env.asr(0.001, 0.5, 1, -10).test(2).plot;
 
 SynthDef(\granRadio,{
-	arg sync=1, dens=20, baseDur=0.05, durRand=1, buf=0, rate=1, rateRand=1, grainEnv=(-1), panHz=0.1, panRand=0, atk=1, rel=1, amp=(-3), gate=1, out=0,out2=0, ptrBus=0, ptrSampleDelay=20000, ptrRandSamples=5000, minPtrDelay=1000, curve=(-8), hpf=50, switch=1, rq=0.5, freqFilter=2700;
+	arg sync=1, dens=20, baseDur=0.05, durRand=1, buf=0, rate=1, rateRand=1, grainEnv=(-1), panHz=0.1, panRand=0, atk=1, rel=1, amp=(-3), gate=1, out=0,out2=0, ptrBus=0, ptrSampleDelay=20000, ptrRandSamples=5000, minPtrDelay=1000, curve=(-8), hpf=50, switch=1, rq=0.5, freqFilter=2700, bufIndex=0, bufpos=0, panRate=0.5;
 
 	var sig, env, densCtrl, durCtrl, panCtrl, rateCtrl, ptr, ptrRand, totalDelay, maxGrainDur, pan, sig2, start;
 
@@ -386,7 +418,8 @@ SynthDef(\granRadio,{
 	maxGrainDur = (totalDelay / rateCtrl) / SampleRate.ir;
 	durCtrl = min(durCtrl, maxGrainDur);
 
-	pan = LFNoise2.ar(0.2);
+	pan = LFNoise2.ar(panRate);
+	// grainEnv = VOsc.kr((bufIndex + bufpos), 1/SampleRate.ir);
 
 	sig = GrainBuf.ar (
 		4,
@@ -417,17 +450,19 @@ SynthDef(\granRadio,{
 	sig = HPF.ar(sig, hpf.lag(3));
 	// sig = RLPF.ar(sig, freqFilter.lag(2), rq);
 	sig = sig * env * amp.dbamp.lag(2) * switch;
-	sig2 = sig2 * env * amp.dbamp.lag(2) * (1 - switch);
+	sig2 = (sig2 * env * amp.dbamp.lag(2)) * (1 - switch);
 
 	Out.ar(out, sig);
 	Out.ar(out2, sig2);
 }).add;
 
 SynthDef(\granul, {
-	arg buf=0, out=0, amp=0, atk=1, rel=1, rate=1, pan=0, pos=0.2, grainEnv=(-1), masse=10, dur=0.1, drive=1.15, rateSaw=1, gate=0;
-	var sig, env;
+	arg buf=0, out=0,out2=0, amp=0, atk=1, rel=1, rate=0.82, pan=0, pos=0.1, grainEnv=(-1), masse=10, dur=0.1, drive=1.15, rateSaw=0.01, gate=0, modGong=0, gateout=0;
+	var sig, env, duck, gong, envout;
 
-	env = EnvGen.kr(Env.new([1,0], [rel], -3), gate);
+	envout = EnvGen.kr(Env.new([1,0], [rel/8], [-4]), gateout, doneAction:2);
+	env = EnvGen.kr(Env.new([0,1,0], [atk,rel], [-3,2]), gate, doneAction:2);
+	gong = EnvGen.kr(Env.new([1,0.65,1], [0.1], -4), modGong, doneAction:0);
 
 	pos = LFSaw.kr(rateSaw, 1);
 
@@ -437,13 +472,50 @@ SynthDef(\granul, {
 		dur.lag(2),
 		buf,
 		rate.lag(2),
-		pos.lag(0.2),
-		4,
-		pan,
+		pos.lag(2),
+		2,
+		pan.lag(3),
 		grainEnv,
 		512,
 	);
 	sig = (sig * drive.lag(2)).tanh;
+	sig = RHPF.ar(sig, 75, 0.02) + RHPF.ar(sig, 250, 0.25, 0.3) + RHPF.ar(sig, 750, 0.25, 0.3);
+	sig = Compander.ar(sig, sig, 1, 0.94, 0.2, 0.005,0.2);
+	sig = sig * amp.dbamp.lag(2) * env * gong * envout;
+	sig = Limiter.ar(sig, 0.88);
+	Out.ar(out,sig);
+	// Out.ar(out2, duck);
+}).add;
+
+
+SynthDef(\granul_2, {
+	arg buf=0, out=0, amp=0, atk=3, rel=1, rate=1, pan=0, pos=0.2, grainEnv=(-1), masse=10, dur=0.1, drive=1.15, rateSaw=1, gate=0, gateout;
+	var sig, env, envout;
+
+	envout = EnvGen.kr(Env.new([1,0], [rel/2], [-4]), gateout, doneAction:2);
+	env = EnvGen.kr(Env.new([0,1,1,0], [atk,2,rel], [4,2]),1, doneAction:2);
+
+	pos = LFSaw.kr(rateSaw, 1);
+
+	sig = GrainBuf.ar(
+		2,
+		Impulse.ar(masse.lag(2)),
+		dur.lag(2),
+		buf,
+		rate.lag(2),
+		pos.lag(0.2),
+		4,
+		LFNoise2.ar(0.2).linlin(-1,1,-0.6,0.6),
+		grainEnv,
+		512,
+	);
+
+	sig =  RHPF.ar(Compander.ar(sig, sig, 1, 1, 0.5, 0.01,0.2), 150, 0.4);
+	sig = sig + RHPF.ar(sig, LFNoise2.ar(0.2).linlin(-1,1,50,100), 0.001, 0.7);
+	sig = sig + CombL.ar(sig, 0.2, LFNoise2.ar(3).linlin(-1,1,0.002,0.003), 1, 0.2);
+
+	sig = (sig * drive.lag(2)).tanh;
+	sig = Limiter.ar(sig, 0.99);
 	sig = sig * amp.dbamp.lag(2) * env;
 	Out.ar(out,sig);
 }).add;
@@ -485,11 +557,11 @@ SynthDef(\vstDelay, {
 }).add;
 
 SynthDef(\vstMassive, {
-	arg in, out, amp=1, mix=0;
+	arg in, out, amp=(-3), mix=0;
 	var sig;
 
 	sig = In.ar(in, 2);
-	sig = sig * amp;
+	sig = sig * amp.dbamp;
 	Out.ar(out, VSTPlugin.ar(sig, 2, id: \vstMassive, params: [0, mix]));
 }).add;
 
@@ -553,8 +625,8 @@ SynthDef(\satu, {
 	wet = (dry * saturation).tanh(1);
 
 	sig = XFade2.ar(dry, wet, mix*2-1);
-	sig = LPF.ar(sig, freqLpf);
-	sig = HPF.ar(sig, freqHpf);
+	sig = LPF.ar(sig, freqLpf.lag(2));
+	sig = HPF.ar(sig, freqHpf.lag(2));
 	sig = sig*amp.dbamp.lag(2);
 
 	Out.ar(out,sig);
