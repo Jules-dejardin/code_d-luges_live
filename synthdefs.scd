@@ -1,4 +1,22 @@
+// [2] ++ [0.2,0.8,0.65,0.45, 0.3].scramble
 //Générateurs de sons
+SynthDef(\woah, {
+	arg freq=220, out=0, pan=0, amp=(-7), gain=2, atk=0.001, rel=0.4;
+	var sig, env;
+
+	env = EnvGen.kr(Env([0,1,0], [atk,rel], -4),doneAction:2); // enveloppe du son, comment le volume va se comporter.
+	freq = freq * Env.perc(atk*2, rel).ar.linlin(0,1,1,Rand(0.80,0.998));
+	sig = Pulse.ar([freq/1.5, freq, freq*1.5, freq*3, freq*6], 0.5, [0.7] ++[0.2,0.65,0.45, 0.3].scramble).sum;
+	sig = MoogFF.ar(sig, Env.perc(atk*3, rel).ar.linlin(0,1,444, freq*SinOsc.ar(0.1).linlin(-1,1, 1,Rand(2,6)).lag(3)), gain);
+	// sig = LPF.ar(sig, 15000);
+	sig = (sig*1) + DelayN.ar(sig*SinOsc.ar(0.25).linlin(-1,1,0.1,0.5), 0.4, (1..6).linlin(1,6,0.1,0.3), 0.5).tanh.sum;
+	sig = Limiter.ar(sig, 0.6);
+	// sig = HPF.ar(sig, 40);
+	sig = sig * env *amp.dbamp; // application de l'enveloppe
+	sig = Pan2.ar(sig, pan); // passage de une enceinte à deux
+	Out.ar(out, sig);
+}).add;
+
 SynthDef(\noise_waves, {
 	arg amp=(-5), out=0, atk=0.6, rel=4, start=1.75, end=1.5,mid=1.25,  width=2;
 	var sig, env, lfo, lay1, lay2, lay3;
@@ -221,6 +239,13 @@ SynthDef(\rec, {
 	BufWr.ar(sig, buf, ptr);
 }).add;
 
+SynthDef(\in, {
+	arg in_1, in_2, out, amp=0;
+	var sig;
+	sig = (In.ar(in_1, 1) + In.ar(in_2, 1))* amp.dbamp;
+	Out.ar(out,sig);
+}).add;
+
 //GONG
 
 SynthDef(\gong, {
@@ -397,15 +422,15 @@ SynthDef(\gran,{
 //Env.asr(0.001, 0.5, 1, -10).test(2).plot;
 
 SynthDef(\granRadio,{
-	arg sync=1, dens=20, baseDur=0.05, durRand=1, buf=0, rate=1, rateRand=1, grainEnv=(-1), panHz=0.1, panRand=0, atk=1, rel=1, amp=(-3), gate=1, out=0,out2=0, ptrBus=0, ptrSampleDelay=20000, ptrRandSamples=5000, minPtrDelay=1000, curve=(-8), hpf=50, switch=1, rq=0.5, freqFilter=2700, bufIndex=0, bufpos=0, panRate=0.5;
+	arg sync=1, dens=20, baseDur=0.05, durRand=1, buf=0, rate=1, rateRand=1, grainEnv=(-1), panHz=0.1, panRand=0, atk=1, rel=1, amp=(-3), gate=1, out=0,out2=0, ptrBus=0, ptrSampleDelay=20000, ptrRandSamples=5000, minPtrDelay=1000, curve=(-8), hpf=25, switch=1, rq=0.5, freqFilter=2700, bufIndex=0, bufpos=0, panRate=0.5;
 
 	var sig, env, densCtrl, durCtrl, panCtrl, rateCtrl, ptr, ptrRand, totalDelay, maxGrainDur, pan, sig2, start;
 
-	// start = EnvGen.kr(Env.new([0,1], [0.2],2));
+	start = EnvGen.kr(Env.new([0,1], [0.2],2));
 	env = EnvGen.ar(Env.asr(atk,1,rel,[4,curve]), gate, doneAction:2);
 	densCtrl = Select.ar(sync, [Dust.ar(dens), Impulse.ar(dens)]);
 	durCtrl = baseDur * LFNoise1.kr(100).exprange(1/durRand,durRand);
-	rateCtrl = rate * LFNoise1.ar(100).exprange(1/rateRand, rateRand);
+	rateCtrl = rate.lag(1) * LFNoise1.ar(100).exprange(1/rateRand, rateRand);
 	//panCtrl = pan + LFNoise1.kr(panHz).bipolar(panRand);
 
 	ptrRand = LFNoise1.ar(100).bipolar(ptrRandSamples);
@@ -449,7 +474,7 @@ SynthDef(\granRadio,{
 
 	sig = HPF.ar(sig, hpf.lag(3));
 	// sig = RLPF.ar(sig, freqFilter.lag(2), rq);
-	sig = sig * env * amp.dbamp.lag(2) * switch;
+	sig = sig * env * amp.dbamp.lag(2) * switch * start;
 	sig2 = (sig2 * env * amp.dbamp.lag(2)) * (1 - switch);
 
 	Out.ar(out, sig);

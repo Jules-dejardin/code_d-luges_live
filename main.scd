@@ -50,16 +50,12 @@ s.waitForBoot({
 	s.sync; //wait the server to be ok
 	"synthdefs.scd".loadRelative;
 	// "midi_connect.scd".loadRelative;
-
-	VSTPlugin.plugins['ValhallaFreqEcho'];
-	VSTPlugin.plugins['ValhallaSupermassive'];
-
 	s.sync;
 	ServerTree.add(~makeNodes);
 	ServerTree.add(~makeEvents);
 	s.freeAll;
 	s.sync;
-	~connect_midi_devices.("Launch Control XL", "Launch Control XL");
+		~connect_midi_devices.("Launch Control XL", "Launch Control XL");
 	"done".postln;
 });
 )

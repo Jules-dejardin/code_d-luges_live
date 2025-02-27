@@ -9,39 +9,18 @@
 		~granGrp = Group.after(~recGrp);
 
 		~saturationGrp = Group.after(~granGrp);
-
 		~brickWallGrp = Group.after(~saturationGrp);
-
 		~delayGrp = Group.after(~brickWallGrp);
-
 		~pitchGrp = Group.after(~delayGrp);
 
 		~delayValhGrp = Group.after(~pitchGrp);
 		~massiveValhGrp = Group.after(~delayValhGrp);
+		~arrache = Group.after(~massiveValhGrp);
 
-		~masterGrp = Group.after(~massiveValhGrp);
+		~masterGrp = Group.after(~arrache);
 		~masterGrp_bspat = Group.after(~masterGrp);
 		~masterGrpSpat = Group.after(~masterGrp_bspat);
 
-		~vstDelaySynth = VSTPluginController(Synth(
-			\vstDelay,
-			[
-				\in, ~bus[\delayValh],
-				\out, ~bus[\massive]],
-			~delayValhGrp
-		), id: \vstDelay);
-
-		//~vstDelaySynth.close;
-		// ~vstMassiveSynth.synth.set(\out, ~bus[\expend]);
-
-		~vstMassiveSynth = VSTPluginController(Synth(
-			\vstMassive,
-			[
-				\in, ~bus[\massive],
-				\out, ~bus[\expend],
-			],
-			~massiveValhGrp
-		), id: \vstMassive);
 
 		~radio_expend_zero = Synth.new(
 			\radio_expend,

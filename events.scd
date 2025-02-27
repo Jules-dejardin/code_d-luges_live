@@ -6,15 +6,20 @@
 	e = Dictionary.new;
 
 	e.add(\init -> {
-		~one = Synth(\radio, [\in, 0, \mod,1, \out, ~bus[\delayValh] , \amp, -60], ~mainGrp);//radio
+		~one = Synth(\radio, [\in, 0, \mod,1, \out, 4, \amp, -60], ~mainGrp);//radio
 		~recBuff = Buffer.alloc(s, s.sampleRate * 5, 1);
+		~recBuff_samp = Buffer.alloc(s, s.sampleRate * 5, 1);
 		// ~recBuff_2 = Buffer.alloc(s, s.sampleRate * 40, 1);
 		//~recBuff.plot;
 		~radioRead = Synth(\AudioInputMono, [\input, 0, \out, ~bus[\radioBus], \amp, 0], ~radioGrp);
+		~sampRead = Synth(\in, [\in_1, ~bus[\pitch], \in_2, ~bus[\pitch_2], \out, ~bus[\sampBus], \amp, 0], ~delayValhGrp);
+
 		~radioPtr = Synth(\ptr, [\buf, ~recBuff, \out, ~bus[\ptrBus]], ~ptrGrp);
+		~sampPtr = Synth(\ptr, [\buf, ~recBuff_samp, \out, ~bus[\ptrBusSamp]], ~massiveValhGrp);
+
 		~radioRecord = Synth(\rec, [\ptrIn, ~bus[\ptrBus], \micIn, ~bus[\radioBus], \buf, ~recBuff], ~recGrp);
-		~vstDelaySynth.open("ValhallaFreqEcho", editor: true, verbose:true);
-		~vstMassiveSynth.open("ValhallaSupermassive", editor: true, verbose:true);
+		~sampRecord = Synth(\rec, [\ptrIn, ~bus[\ptrBusSamp], \micIn, ~bus[\sampBus], \buf, ~recBuff_samp], ~arrache);
+
 		~env_grad= Buffer.sendCollection(s, Env([0, 1,0.5,0], [0.001, 0.1,0.2], [-4,-4, -2]).discretize, 1);
 	});
 	// Compander
@@ -86,7 +91,7 @@
 			~g =  5.collect({
 				arg n;
 				Synth(\granRadio, [
-					\amp, -6,
+					\amp, 0,
 					\buf, ~recBuff,
 					\out, ~bus[\gran_radio],
 					\out2,~bus[\satura],
@@ -320,6 +325,37 @@
 	)});
 
 	//event page 3
+
+	e.add(\event16 -> {(
+		~gs.do({ arg n; n.set(\gate, 0, \rel, 1) });
+
+			~recBuff_samp.zero;
+			~gs =  3.collect({
+				arg n;
+				Synth(\granRadio, [
+					\amp, -6,
+					\buf, ~recBuff_samp,
+					\out, 0,
+					\out2,0,
+					\atk, 0.01,
+					\rel, 0.3,
+					\gate, 1,
+					\sync, 1,
+					\dens, exprand(30,50),
+					\baseDur, exprand(0.02, 0.3),
+					\durRand, 1,
+					\rate, 1,
+					\rateRand, 2.midiratio,
+					// \bufIndex, ~bufenv[0].bufnum,
+					\grainEnv, ~bufenv[0],
+					\ptrBus, ~bus[\ptrBusSamp],
+					\ptrSampleDelay, n.linlin(0,4,20000,s.sampleRate*2),
+					\ptrRandSamples, 10000,
+					\minPtrDelay, 2000
+				],~masterGrp);
+			});
+	)});
+
 	e.add(\event19 -> {(
 		~melo.free;
 		~melo = Synth(\melo_mono, [
@@ -460,6 +496,20 @@ e.add(\event20 -> {(
 	e.add(\event26 -> {(
 		~radio_expend_zero.set(\amp2,-60,\amp3, -60,\amp4, -60);
 	)});
+	// 60.midicps
+	e.add(\event24 -> {(
+	~pat.stop;
+~pat = Pbind(
+	\instrument, \woah,
+	\dur, Pseq([1/3, 1/3, 1/3, 1/2, 1/2, 1/1.5]*20, inf),
+			\freq, Pseq([261.625, 261.300,261.625/3,(261.625/3)*1.5,261.625*2/3, 261.625*2/3*1.5, 261.625/3], inf),
+	\gain, Pseq(((1..30)/10).scramble,inf),
+	\rel, 4*4,
+	\atk, 2,
+	\out, 0,
+	// \amp, Pseq([-20,-15,-10,-5], 1)
+).play;
+)});
 
 	e.add(\event27 -> {(
 
@@ -979,12 +1029,14 @@ e.add(\event20 -> {(
 		], ~mainGrp);
 	)});
 	e.add(\sample28 -> {(
-			/*Synth(\lectechant, [
-			\buf, ~buffers[\][[].choose],
-				\loop, 0,
-				\out, ~bus[\satura],
-				\amp, 0,
-			], ~mainGrp);*/
+			Synth(\lectechant, [
+			\buf, ~buffers[\human_bird][(0..7).choose],
+			\loop, 0,
+			\out, ~bus[\satura],
+			\out2, ~bus[\satura_2],
+			\bus, ~witchChannel,
+			\amp, 0,
+		], ~mainGrp);
 	)});
 
 	e.add(\sample29 -> {(
@@ -1040,6 +1092,17 @@ e.add(\event20 -> {(
 			], ~mainGrp);
 	)});
 
+	e.add(\sample32 -> {(
+			Synth(\lectechant, [
+			\buf, ~buffers[\human_bird][(0..7).choose],
+			\loop, 0,
+			\out, ~bus[\satura],
+			\out2, ~bus[\satura_2],
+			\bus, ~witchChannel,
+			\amp, 0,
+		], ~mainGrp);
+	)});
+
 	e.add(\quit -> {
 		~noise_boucle.stop;
 		~boucle.stop;
@@ -1052,6 +1115,7 @@ e.add(\event20 -> {(
 		~medium.stop;
 		~snow.set(\relOut, 5, \gate, 0);
 		~g.do({ arg n; n.set(\gate, 0, \rel, 10) });
+		~gs.do({ arg n; n.set(\gate, 0, \rel, 2) });
 		~medium.stop;
 		~cloches.stop;
 		~bloup.stop;
@@ -1068,6 +1132,7 @@ e.add(\event20 -> {(
 		~drame_gran_route.stop;
 		~drame_slow_route.stop;
 		~drame_rout.stop;
+		~pat.stop;
 	});
 
 	e.add(\mayday -> {
@@ -1128,7 +1193,7 @@ e.add(\event20 -> {(
 		{num==44 && val==127 && chan==3}{e[\event22].value;"gong nappe".postln;}
 		// nappes tableau 4
 		{num==73 && val==127 && chan==4}{e[\event23].value;"blast".postln;}
-		{num==74 && val==127 && chan==4}{e[\event24].value;"vide".postln;}
+		{num==74 && val==127 && chan==4}{e[\event24].value;"wowoah".postln;}
 		{num==75 && val==127 && chan==4}{e[\event25].value;"vide".postln;}
 		{num==41 && val==127 && chan==4}{e[\event26].value;"radio trick".postln;}
 		{num==42 && val==127 && chan==4}{e[\event27].value;"radio notcher".postln;}
@@ -1239,8 +1304,9 @@ e.add(\event20 -> {(
 		});
 
 		if(ccNum == 79 /*&& channel == 1*/, {
-			~mixDel = val.linlin(0, 127, 0, 1).round(0.01);
-			~vstDelaySynth.synth.set(\mix, ~mixDel);
+			~mixDel = val;
+			m.control(1,20, ~mixDel);
+			// ~vstDelaySynth.synth.set(\mix, ~mixDel);
 			"Mix Delay".postln;
 			~mixDel.postln;
 			~radio_expend_zero.set(\amp2,0,\amp3, 0,\amp4, 0);
@@ -1268,36 +1334,41 @@ e.add(\event20 -> {(
 		});
 
 		if(ccNum == 17 /*&& channel == 1*/, {
-			~msDel = val.linlin(0, 127, 0, 1).round(0.01);
-			~vstDelaySynth.synth.set(\ms, ~msDel);
+			~msDel = val;
+			m.control(1,23,~msDel);
+			// m.control(1,23,1);//init
 			"Ms Delay".postln;
 			~msDel.postln;
 		});
 
 		if(ccNum == 18 /*&& channel == 1*/, {
-			~phaseDel = val.linlin(0, 127, 0, 1).round(0.01);
-			~vstDelaySynth.synth.set(\phase, ~phaseDel);
+			~phaseDel = val;
+			m.control(1,21, ~phaseDel);
+			// m.control(1,21, 1);//init
 			"Phase Delay".postln;
 			~phaseDel.postln;
 		});
 
 		if(ccNum == 19 /*&& channel == 1*/, {
-			~fdbackDel = val.linlin(0, 127, 0, 1).round(0.01);
-			~vstDelaySynth.synth.set(\fdback, ~fdbackDel);
+			~fdbackDel = val;
+			m.control(1,22,~fdbackDel);
+			// m.control(1,22,1);//init
 			"Feedback Delay".postln;
 			~fdbackDel.postln;
 		});
 
 		if(ccNum == 20 /*&& channel == 1*/, {
-			~lcDel = val.linlin(0, 127, 0, 1).round(0.01);
-			~vstDelaySynth.synth.set(\lc, ~lcDel);
+			~lcDel = val;
+			m.control(1,24,~lcDel);
+			// m.control(1,24,1); //init
 			"Lc Delay".postln;
 			~lcDel.postln;
 		});
 		// dry wet reverb plug
 		if(ccNum == 78 /*&& channel == 1*/, {
-			~mixVerb = val.linlin(0, 127, 0, 1).round(0.01);
-			~vstMassiveSynth.synth.set(\mix, ~mixVerb);
+			~mixVerb = val;
+			m.control(1,25,~mixVerb);
+			// m.control(1,25,1);//init
 			"Verb mix".postln;
 			~mixVerb.postln;
 		});
@@ -1406,6 +1477,7 @@ e.add(\event20 -> {(
 		//master samples || enfin !!
 		if (ccNum == 36, {
 			~volSamples = val.linlin(0,127,-60,6).round(0.01);
+			~gs.do({ arg n; n.set(\amp, ~volSamples-6) });
 			~masterGranRadio.set(\amp, ~volSamples);
 			~saturator.set(\amp, ~volSamples);
 			~saturator_2.set(\amp, ~volSamples);
